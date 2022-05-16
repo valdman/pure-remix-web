@@ -1,0 +1,37 @@
+{
+    "name": "remix-template-remix",
+    "private": true,
+    "description": "",
+    "license": "",
+    "sideEffects": false,
+    "scripts": {
+        "build": "remix build",
+        "dev": "remix dev",
+        "start": "remix-serve build"
+    },
+    "dependencies": {
+        "@react-three/fiber": "^7.0.29",
+        "@remix-run/node": "^1.4.3",
+        "@remix-run/react": "^1.4.3",
+        "@remix-run/serve": "^1.4.3",
+        "animejs": "^3.2.1",
+        "react": "^18.1.0",
+        "react-dom": "^18.1.0",
+        "remix": "^1.4.3",
+        "three": "^0.140.2"
+    },
+    "devDependencies": {
+        "@remix-run/dev": "^1.4.3",
+        "@remix-run/eslint-config": "^1.4.3",
+        "@types/animejs": "^3.1.4",
+        "@types/react": "^17.0.45",
+        "@types/react-dom": "^17.0.17",
+        "@types/three": "^0.140.0",
+        "eslint": "^8.15.0",
+        "prettier": "^2.6.2",
+        "typescript": "^4.6.4"
+    },
+    "engines": {
+        "node": ">=14"
+    }
+}
