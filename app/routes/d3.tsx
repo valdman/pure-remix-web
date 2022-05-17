@@ -1,10 +1,11 @@
-import {createContext, useContext, useEffect, useRef, useState} from 'react';
+import {createContext, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import type * as THREE from 'three';
 import type { AnimeInstance } from 'animejs';
 import anime from 'animejs';
 
 import type {MeshProps} from '@react-three/fiber';
 import {Canvas, useFrame} from '@react-three/fiber';
+import type { StoreProps } from '@react-three/fiber/dist/declarations/src/core/store';
 
 import {withRenderIfMounted} from '~/hoc/withRenderIfMounted';
 import {WebGL} from '~/engine/gl';
@@ -19,17 +20,20 @@ const Box: React.FC<MeshProps> = (props) => {
     const mesh = useRef<THREE.Mesh>(null!);
     // Set up state for the hovered and active state
     const [hovered, setHover] = useState(false);
-    const [active, setActive] = useState(false);
+    // const [active, setActive] = useState(false);
     
     const {setInfo} = useContext(GlobalContext);
     const animation = useRef<AnimeInstance>();
-    // Rotate mesh every frame, this is outside of React without overhead
+
+    const scaleAnimation = useRef<AnimeInstance>();
+    const scaleRef = useRef({scale: 1});
+
     useFrame(() => {
-        if(animation.current) return;
-        animation.current = anime({
+        // Rotate mesh every frame, this is outside of React without overhead
+        animation.current = animation.current || anime({
             targets: mesh.current.rotation,
-            x: 10,
-            y: -10,
+            x: 4,
+            y: -4,
             direction: 'alternate',
             loop: true,
             easing: 'easeInOutQuad',
@@ -39,14 +43,32 @@ const Box: React.FC<MeshProps> = (props) => {
                 setInfo();
             }
           });
+        scaleAnimation.current = scaleAnimation.current || anime({
+            targets: scaleRef.current,
+                scale: 1.5,
+                direction: 'normal',
+                easing: 'easeInOutSine',
+                duration: 1000,
+        });
     });
 
+
+    function handleClick() {
+        const anime = scaleAnimation.current;
+        if(!anime) return;
+        const {completed, began, play, reverse, restart} = anime;
+
+        // if(completed || (began && !completed)) reverse();
+        // else play();
+        restart();
+    }
+    
     return (
         <mesh
             {...props}
             ref={mesh}
-            scale={active ? 1.5 : 1}
-            onClick={(event) => setActive(!active)}
+            scale={scaleRef.current?.scale}
+            onClick={handleClick}
             onPointerOver={(event) => setHover(true)}
             onPointerOut={(event) => setHover(false)}
         >
@@ -60,16 +82,16 @@ function Scene() {
     const [warning, setWarning] = useState('');
     const [info, setInfo] = useState('');
 
-    const lightPosition = useRef({x: 10, y: 10, z: 10});
+    const lightPosition = useRef({x: 5, y: 5, z: 5});
     const animation = useRef<AnimeInstance>();
     // Rotate mesh every frame, this is outside of React without overhead
     useFrame(() => {
         if(animation.current) return;
         animation.current = anime({
             targets: lightPosition.current,
-            x: 0,
-            y: 0,
-            z: 0,
+            x: -5,
+            y: -5,
+            z: -5,
             direction: 'alternate',
             loop: true,
             easing: 'easeInOutQuad',
@@ -105,4 +127,46 @@ function Scene() {
     );
 }
 
-export default withRenderIfMounted(() => <Canvas><Scene/></Canvas>);
+const CAMERA_DEFAULTS = {
+    fov: 75,
+    near: 0.1,
+    far: 1000,
+    position: [0, 0, 5] as [number, number, number]
+};
+
+function View() {
+    const animation = useRef<AnimeInstance>();
+    const cameraRef = useRef({
+        x: 0,
+        y: 0,
+        z: 5,
+     });
+     const [camera, setCamera] = useState(CAMERA_DEFAULTS);
+
+     const callback = useCallback(function () {
+        if(animation.current) return;
+        animation.current = anime({
+            targets: cameraRef.current,
+            x: 0,
+            y: 10,
+            z: 10,
+            direction: 'alternate',
+            loop: true,
+            easing: 'easeInOutQuad',
+            duration: 1000,
+            autoplay: true,
+            update() {
+                setCamera({
+                    ...camera,
+                    position: Object.values(cameraRef.current) as [number, number, number],
+                });
+            }
+          });
+     }, [camera]);
+
+    useEffect(callback, [callback]);
+
+    return <Canvas camera={camera}><Scene/></Canvas>;
+}
+
+export default withRenderIfMounted(View);
