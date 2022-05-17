@@ -1,4 +1,5 @@
 import {createContext, useEffect, useRef, useState} from 'react';
+import type { AnimeInstance } from 'animejs';
 import type * as THREE from 'three';
 
 import type {MeshProps} from '@react-three/fiber';
@@ -13,7 +14,14 @@ const GlobalInit = {
 };
 const GlobalContext = createContext(GlobalInit);
 
-const Box: React.FC<MeshProps & {x: number; y: number}> = ({x, y, ...props}) => {
+interface BoxProps {
+    x: number;
+    y: number;
+    scale: number;
+    scaleAnimation: AnimeInstance | null;
+};
+
+const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, ...props}) => {
     // This reference will give us direct access to the mesh
     const mesh = useRef<THREE.Mesh>(null!);
     // Set up state for the hovered and active state
@@ -26,21 +34,12 @@ const Box: React.FC<MeshProps & {x: number; y: number}> = ({x, y, ...props}) => 
         y: -4,
         direction: 'alternate',
         loop: true,
-        easing: 'easeInOutQuad',
+        easing: 'easeInOutQuint',
         duration: 3000,
         autoplay: true,
     });
 
-    const [scale, scaleAnimation] = useAnimeFiber({
-        scale: [
-            {value: 0.6, easing: 'easeOutSine', duration: 500},
-            {value: 2, easing: 'easeInOutQuad', duration: 600},
-        ],
-        direction: 'normal',
-        easing: 'easeInOutSine',
-        autoplay: true,
-        duration: 300,
-    }, {scale: 1});
+    
 
     function handleClick() {
         if (!scaleAnimation) return;
@@ -54,7 +53,7 @@ const Box: React.FC<MeshProps & {x: number; y: number}> = ({x, y, ...props}) => 
         <mesh
             {...props}
             ref={mesh}
-            scale={scale.scale}
+            scale={scale}
             onClick={handleClick}
             onPointerOver={(event) => setHover(true)}
             onPointerOut={(event) => setHover(false)}
@@ -74,30 +73,44 @@ function Scene() {
     const [depth] = useAnimeFiber(
         {
             depth: [
-                {value: -0.3, easing: 'easeOutSine', duration: 500},
-                {value: 0.3, easing: 'easeOutSine', duration: 500},
+                {value: -0.5, easing: 'easeOutSine', duration: 500},
+                {value: 0.5, easing: 'easeOutSine', duration: 500},
             ],
             direction: 'alternate',
             autoplay: true,
             loop: true,
-            duration: 10000,
+            duration: 9000,
+            endDelay: 3000,
         },
         {depth: 0},
     );
 
     const [lightPosition] = useAnimeFiber(
         {
-            x: -5,
-            y: -5,
-            z: -5,
+            x: [-5, 4, 5],
+            y: [-5, 1, 5],
+            z: 0,
             direction: 'alternate',
             loop: true,
-            easing: 'easeInOutElastic',
+            easing: 'easeInOutBounce',
             duration: 10000,
             autoplay: true,
         },
         {x: 5, y: 5, z: 5},
     );
+
+    const [scale, scaleAnimation] = useAnimeFiber({
+        scale: [
+            {value: 0.5, easing: 'easeOutSine', duration: 500},
+            {value: 1.9, easing: 'easeInOutQuad', duration: 600},
+        ],
+        direction: 'alternate',
+        easing: 'easeInOutSine',
+        autoplay: true,
+        loop: true,
+        duration: 300,
+        endDelay: 5700
+    }, {scale: 1});
 
     useEffect(function () {
         if (!WebGL.isWebGLAvailable()) {
@@ -129,6 +142,8 @@ function Scene() {
                                     key={`${fmtKey(i)}_${fmtKey(j)}`}
                                     x={i}
                                     y={j}
+                                    scale={scale.scale}
+                                    scaleAnimation={scaleAnimation}
                                     position={[i, j, depth.depth * Math.sin(i) * j * 1e-1]}
                                 />
                             );
