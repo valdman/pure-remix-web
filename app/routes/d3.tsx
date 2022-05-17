@@ -1,5 +1,5 @@
 import {createContext, useEffect, useRef, useState} from 'react';
-import type { AnimeInstance } from 'animejs';
+import type {AnimeInstance} from 'animejs';
 import type * as THREE from 'three';
 
 import type {MeshProps} from '@react-three/fiber';
@@ -19,14 +19,12 @@ interface BoxProps {
     y: number;
     scale: number;
     scaleAnimation: AnimeInstance | null;
-};
+}
 
 const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, ...props}) => {
     // This reference will give us direct access to the mesh
     const mesh = useRef<THREE.Mesh>(null!);
-    // Set up state for the hovered and active state
     const [hovered, setHover] = useState(false);
-    // const [active, setActive] = useState(false);
 
     useAnimeFiber({
         targets: mesh.current?.rotation,
@@ -39,12 +37,8 @@ const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, ...pr
         autoplay: true,
     });
 
-    
-
     function handleClick() {
         if (!scaleAnimation) return;
-        // if(completed || (began && !completed)) reverse();
-        // else play();
         scaleAnimation.reverse();
         scaleAnimation.play();
     }
@@ -67,8 +61,6 @@ const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, ...pr
 function Scene() {
     const [warning, setWarning] = useState('');
     const [info, setInfo] = useState('');
-
-    // Rotate mesh every frame, this is outside of React without overhead
 
     const [depth] = useAnimeFiber(
         {
@@ -99,18 +91,21 @@ function Scene() {
         {x: 5, y: 5, z: 5},
     );
 
-    const [scale, scaleAnimation] = useAnimeFiber({
-        scale: [
-            {value: 0.5, easing: 'easeOutSine', duration: 500},
-            {value: 1.9, easing: 'easeInOutQuad', duration: 600},
-        ],
-        direction: 'alternate',
-        easing: 'easeInOutSine',
-        autoplay: true,
-        loop: true,
-        duration: 300,
-        endDelay: 5700
-    }, {scale: 1});
+    const [scale, scaleAnimation] = useAnimeFiber(
+        {
+            scale: [
+                {value: 0.5, easing: 'easeOutSine', duration: 500},
+                {value: 1.9, easing: 'easeInOutQuad', duration: 600},
+            ],
+            direction: 'alternate',
+            easing: 'easeInOutSine',
+            autoplay: true,
+            loop: true,
+            duration: 300,
+            endDelay: 5700,
+        },
+        {scale: 1},
+    );
 
     useEffect(function () {
         if (!WebGL.isWebGLAvailable()) {
@@ -168,7 +163,7 @@ const CAMERA_DEFAULTS = {
 
 function View() {
     return (
-        <div style={{height: '100vh'}}>
+        <div style={{height: 'calc(100vh - 60px)'}}>
             <Canvas camera={CAMERA_DEFAULTS}>
                 <Scene />
             </Canvas>
