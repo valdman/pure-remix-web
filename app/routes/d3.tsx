@@ -19,22 +19,35 @@ interface BoxProps {
     y: number;
     scale: number;
     scaleAnimation: AnimeInstance | null;
+    position: [number, number, number];
 }
 
-const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, ...props}) => {
+const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, position, ...props}) => {
     // This reference will give us direct access to the mesh
     const mesh = useRef<THREE.Mesh>(null!);
     const [hovered, setHover] = useState(false);
 
     useAnimeFiber({
         targets: mesh.current?.rotation,
-        x: 4,
-        y: -4,
+        x: Math.PI / 2,
+        y: Math.PI,
+        z: -Math.PI / 2,
         direction: 'alternate',
         loop: true,
         easing: 'easeInOutQuint',
-        duration: 3000,
+        duration: 2000,
         autoplay: true,
+    });
+
+    useAnimeFiber({
+        targets: mesh.current?.position,
+        x: position[0],
+        y: position[1],
+        z: position[2],
+        easing: 'easeInOutCubic',
+        duration: 1000,
+        autoplay: true,
+        endDelay: 5000
     });
 
     function handleClick() {
@@ -48,15 +61,18 @@ const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, ...pr
             {...props}
             ref={mesh}
             scale={scale}
+            position={[position[0] * 1e-3, position[1] * 1e-3, -10]}
             onClick={handleClick}
             onPointerOver={(event) => setHover(true)}
             onPointerOut={(event) => setHover(false)}
         >
             <boxGeometry args={[0.3, 0.3, 0.3]} />
-            <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
+            <meshStandardMaterial color={hovered ? 'hotpink' : 'darkgreen'} metalness={.3} roughness={.5} emissive='black' emissiveIntensity={.1} transparent/>
         </mesh>
     );
 };
+
+const BOX_GRID_SIZE = 5;
 
 function Scene() {
     const [warning, setWarning] = useState('');
@@ -79,16 +95,16 @@ function Scene() {
 
     const [lightPosition] = useAnimeFiber(
         {
-            x: [-5, 4, 5],
-            y: [-5, 1, 5],
-            z: 0,
+            x: [3, 6, 3],
+            y: [4, 2, 4],
+            z: [6, 8],
             direction: 'alternate',
             loop: true,
             easing: 'easeInOutBounce',
             duration: 10000,
             autoplay: true,
         },
-        {x: 5, y: 5, z: 5},
+        {x: 5, y: 5, z: 6},
     );
 
     const [scale, scaleAnimation] = useAnimeFiber(
@@ -130,8 +146,13 @@ function Scene() {
             <pointLight position={lightPositionVector} />
             {[
                 ...(function* gas() {
-                    for (let i = -10; i < 10; i = i + 1) {
-                        for (let j = -10; j < 10; j = j + 1) {
+                    for (let i = -BOX_GRID_SIZE; i <= BOX_GRID_SIZE; i = i + 1) {
+                        for (let j = -BOX_GRID_SIZE; j <= BOX_GRID_SIZE; j = j + 1) {
+                            const z = 1.17 * Math.sqrt(i*i+j*j);
+
+                            if(Math.abs(z) < 4) {
+                                continue;
+                            }
                             yield (
                                 <Box
                                     key={`${fmtKey(i)}_${fmtKey(j)}`}
@@ -139,7 +160,7 @@ function Scene() {
                                     y={j}
                                     scale={scale.scale}
                                     scaleAnimation={scaleAnimation}
-                                    position={[i, j, depth.depth * Math.sin(i) * j * 1e-1]}
+                                    position={[i * 1.5, j * 0.9, z]}
                                 />
                             );
                         }
@@ -155,10 +176,7 @@ function fmtKey(i: number) {
 }
 
 const CAMERA_DEFAULTS = {
-    near: 1e-2,
-    aspect: 1,
-    fov: 75,
-    position: [0, 0, 10] as [number, number, number],
+    position: [0, 0, 15] as [number, number, number],
 };
 
 function View() {
