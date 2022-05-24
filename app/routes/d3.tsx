@@ -47,7 +47,7 @@ const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, posit
         easing: 'easeInOutCubic',
         duration: 1000,
         autoplay: true,
-        endDelay: 5000
+        endDelay: 5000,
     });
 
     function handleClick() {
@@ -67,7 +67,14 @@ const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, posit
             onPointerOut={(event) => setHover(false)}
         >
             <boxGeometry args={[0.3, 0.3, 0.3]} />
-            <meshStandardMaterial color={hovered ? 'hotpink' : 'darkgreen'} metalness={.3} roughness={.5} emissive='black' emissiveIntensity={.1} transparent/>
+            <meshStandardMaterial
+                color={hovered ? 'hotpink' : 'darkgreen'}
+                metalness={0.3}
+                roughness={0.5}
+                emissive='black'
+                emissiveIntensity={0.1}
+                transparent
+            />
         </mesh>
     );
 };
@@ -148,9 +155,9 @@ function Scene() {
                 ...(function* gas() {
                     for (let i = -BOX_GRID_SIZE; i <= BOX_GRID_SIZE; i = i + 1) {
                         for (let j = -BOX_GRID_SIZE; j <= BOX_GRID_SIZE; j = j + 1) {
-                            const z = 1.17 * Math.sqrt(i*i+j*j);
+                            const z = 1.17 * Math.sqrt(i * i + j * j);
 
-                            if(Math.abs(z) < 4) {
+                            if (Math.abs(z) < 4) {
                                 continue;
                             }
                             yield (
