@@ -22,6 +22,27 @@ interface BoxProps {
     position: [number, number, number];
 }
 
+function Sphere({radius, position}: MeshProps & {radius: number}) {
+    const ref = useRef<THREE.Mesh>();
+
+    useAnimeFiber({
+        targets: ref.current?.scale,
+        x: radius,
+        y: radius,
+        z: radius,
+        duration: 1000,
+        easing: 'easeOutQuad',
+        autoplay: true,
+    })
+
+    return (
+        <mesh ref={ref} position={position} scale={0}>
+            <sphereBufferGeometry attach="geometry" args={[radius]} />
+            <meshStandardMaterial attach="material" color="cyan" />
+        </mesh>
+    )
+}
+
 const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, position, ...props}) => {
     // This reference will give us direct access to the mesh
     const mesh = useRef<THREE.Mesh>(null!);
@@ -67,14 +88,8 @@ const Box: React.FC<MeshProps & BoxProps> = ({x, y, scale, scaleAnimation, posit
             onPointerOut={(event) => setHover(false)}
         >
             <boxGeometry args={[0.3, 0.3, 0.3]} />
-            <meshStandardMaterial
-                color={hovered ? 'hotpink' : 'darkgreen'}
-                metalness={0.3}
-                roughness={0.5}
-                emissive='black'
-                emissiveIntensity={0.1}
-                transparent
-            />
+            <meshStandardMaterial color={hovered ? 'hotpink' : 'darkgreen'} displacementScale={0.2} />
+            <dataTexture3D />
         </mesh>
     );
 };
@@ -145,37 +160,47 @@ function Scene() {
 
     const lightPositionVector = Object.values(lightPosition) as [number, number, number];
 
+    const grid = [...generateGrid()];
+
     return (
         <GlobalContext.Provider value={{setInfo: handleStartRound}}>
             {warning}
             {info}
             <ambientLight />
             <pointLight position={lightPositionVector} />
-            {[
-                ...(function* gas() {
-                    for (let i = -BOX_GRID_SIZE; i <= BOX_GRID_SIZE; i = i + 1) {
-                        for (let j = -BOX_GRID_SIZE; j <= BOX_GRID_SIZE; j = j + 1) {
-                            const z = 1.17 * Math.sqrt(i * i + j * j);
-
-                            if (Math.abs(z) < 4) {
-                                continue;
-                            }
-                            yield (
-                                <Box
-                                    key={`${fmtKey(i)}_${fmtKey(j)}`}
-                                    x={i}
-                                    y={j}
-                                    scale={scale.scale}
-                                    scaleAnimation={scaleAnimation}
-                                    position={[i * 1.5, j * 0.9, z]}
-                                />
-                            );
-                        }
-                    }
-                })(),
-            ]}
+            {grid.map(({x, y}) => (
+                <Box
+                    key={`${fmtKey(x)}_${fmtKey(y)}`}
+                    x={x}
+                    y={y}
+                    scale={scale.scale}
+                    scaleAnimation={scaleAnimation}
+                    position={[x * 1.5, y * 0.9, getDepthCoordinate({x, y})]}
+                />
+            ))}
+            <Sphere radius={2} position={[0,0,0]}/>
         </GlobalContext.Provider>
     );
+}
+
+function* generateGrid() {
+    for (let i = -BOX_GRID_SIZE; i <= BOX_GRID_SIZE; i = i + 1) {
+        for (let j = -BOX_GRID_SIZE; j <= BOX_GRID_SIZE; j = j + 1) {
+            const element = {x: i, y: j};
+            const z = getDepthCoordinate(element);
+
+            if (Math.abs(z) < 4) {
+                continue;
+            }
+
+            yield element;
+        }
+    }
+}
+
+function getDepthCoordinate({x, y}: {x: number; y: number}) {
+    const z = 1.17 * Math.sqrt(x * x + y * y);
+    return z;
 }
 
 function fmtKey(i: number) {
@@ -190,7 +215,9 @@ function View() {
     return (
         <div style={{height: 'calc(100vh - 60px)'}}>
             <Canvas camera={CAMERA_DEFAULTS}>
-                <Scene />
+                {/* <Suspense fallback={null}> */}
+                    <Scene />
+                {/* </Suspense> */}
             </Canvas>
         </div>
     );
